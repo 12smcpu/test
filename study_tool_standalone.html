@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>資格学習記録</title>
+<style>
+  :root{
+    --bg: #1c2b33;
+    --bg-grid: rgba(232,163,61,0.06);
+    --panel: #233a44;
+    --panel-border: #335868;
+    --accent: #e8a33d;
+    --accent-soft: rgba(232,163,61,0.18);
+    --sub: #5c8a89;
+    --text: #edeeea;
+    --text-dim: #9fb3ba;
+    --ok: #7fa86b;
+    --warn: #d6634a;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    color:var(--text);
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-attachment: fixed;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .app{
+    position:relative;
+    z-index:1;
+    max-width:480px;
+    margin:0 auto;
+    padding:20px 16px 100px;
+  }
+
+  /* ---------- Header / Countdown ---------- */
+  .exam-name{
+    text-align:center;
+    font-size:13px;
+    color:var(--sub);
+    font-weight:600;
+    letter-spacing:0.04em;
+  }
+  .countdown-block{
+    text-align:center;
+    padding:10px 12px 18px;
+    border-bottom:1px solid var(--panel-border);
+    margin-bottom:18px;
+  }
+  .countdown-eyebrow{
+    font-size:11px;
+    letter-spacing:0.12em;
+    color:var(--sub);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .countdown-number{
+    font-family:var(--font-display);
+    font-size:64px;
+    font-weight:700;
+    line-height:1;
+    color:var(--accent);
+    letter-spacing:-0.02em;
+  }
+  .countdown-unit{
+    font-size:14px;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+  .countdown-date{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-top:8px;
+  }
+
+  .reminder-banner{
+    display:none;
+    background:var(--warn);
+    color:#fff;
+    font-size:13px;
+    padding:10px 14px;
+    border-radius:8px;
+    margin-bottom:16px;
+    text-align:center;
+    font-weight:600;
+  }
+  .reminder-banner.show{display:block;}
+
+  /* ---------- Section card ---------- */
+  .card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    padding:18px 16px;
+    margin-bottom:16px;
+  }
+  .card-title{
+    font-family:var(--font-display);
+    font-size:13px;
+    letter-spacing:0.08em;
+    color:var(--sub);
+    text-transform:uppercase;
+    margin:0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card-title::before{
+    content:"";
+    width:6px;height:6px;
+    background:var(--accent);
+    border-radius:1px;
+    display:inline-block;
+    transform:rotate(45deg);
+  }
+  .card-title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .card-title-row .card-title{ margin-bottom:0; }
+
+  /* ---------- Form controls ---------- */
+  select, input[type="text"], input[type="url"], input[type="date"], input[type="number"]{
+    width:100%;
+    background:#1a2c34;
+    border:1px solid var(--panel-border);
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:6px;
+    font-size:14px;
+    margin-bottom:10px;
+    font-family:var(--font-body);
+  }
+  select:focus, input:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  label{
+    display:block;
+    font-size:11px;
+    color:var(--text-dim);
+    margin-bottom:4px;
+  }
+
+  /* ---------- Timer ---------- */
+  .timer-display{
+    text-align:center;
+    font-family:var(--font-display);
+    font-size:42px;
+    font-weight:700;
+    color:var(--text);
+    padding:16px 0;
+    letter-spacing:0.02em;
+  }
+  .timer-display.running{ color:var(--accent); }
+
+  .btn{
+    width:100%;
+    padding:13px;
+    border:none;
+    border-radius:6px;
+    font-size:15px;
+    font-weight:700;
+    font-family:var(--font-display);
+    cursor:pointer;
+    letter-spacing:0.03em;
+    transition:transform 0.1s ease, opacity 0.2s ease;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn-start{ background:var(--accent); color:#1c2b33; }
+  .btn-stop{ background:var(--warn); color:#fff; }
+  .btn-secondary{ background:transparent; border:1px solid var(--panel-border); color:var(--text-dim); }
+  .btn-small{ padding:8px 12px; font-size:12px; width:auto; }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  .btn-row{ display:flex; gap:8px; margin-top:8px; }
+  .btn-row .btn{ flex:1; }
+
+  /* ---------- History list ---------- */
+  .history-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:10px 0;
+    border-bottom:1px solid var(--panel-border);
+    gap:8px;
+  }
+  .history-item:last-child{ border-bottom:none; }
+  .history-main{ flex:1; min-width:0; }
+  .history-date{ font-size:11px; color:var(--sub); }
+  .history-subject{ font-size:14px; font-weight:600; margin-top:2px; }
+  .history-memo{ font-size:12px; color:var(--text-dim); margin-top:2px; word-break:break-all; }
+  .history-time{
+    font-family:var(--font-display);
+    font-size:16px;
+    font-weight:700;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+  .history-actions{ display:flex; gap:4px; margin-top:6px; }
+  .icon-btn{
+    background:none;
+    border:1px solid var(--panel-border);
+    color:var(--text-dim);
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  .icon-btn:hover{ color:var(--text); border-color:var(--sub); }
+  .icon-btn.danger:hover{ color:var(--warn); border-color:var(--warn); }
+
+  .empty-state{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:13px;
+    padding:20px 0;
+  }
+
+  /* ---------- Summary numbers ---------- */
+  .summary-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .summary-box{
+    flex:1;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    padding:14px 10px;
+    text-align:center;
+  }
+  .summary-value{
+    font-family:var(--font-display);
+    font-size:24px;
+    font-weight:700;
+    color:var(--accent);
+  }
+  .summary-label{
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+
+  /* ---------- Settings ---------- */
+  .settings-toggle{
+    text-align:center;
+    font-size:12px;
+    color:var(--text-dim);
+    cursor:pointer;
+    padding:14px 0 4px;
+    text-decoration:underline;
+  }
+  .settings-panel{ display:none; }
+  .settings-panel.show{ display:block; }
+
+  .profile-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid var(--panel-border);
+    gap:8px;
+  }
+  .profile-item:last-child{ border-bottom:none; }
+  .profile-name{ font-size:14px; font-weight:600; flex:1; min-width:0; }
+  .profile-name.active{ color:var(--accent); }
+  .profile-actions{ display:flex; gap:6px; flex-shrink:0; }
+
+  .category-block{
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .category-block-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .category-block-head input[type="text"]{ margin-bottom:0; flex:1; margin-right:8px; }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:8px;
+  }
+
+  .detail-chip-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .detail-chip{
+    background:#1a2c34;
+    border:1px solid var(--panel-border);
+    border-radius:14px;
+    padding:5px 10px;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .detail-chip button{
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    cursor:pointer;
+    font-size:13px;
+    padding:0;
+    line-height:1;
+  }
+  .detail-chip button:hover{ color:var(--warn); }
+
+  .add-detail-row{ display:flex; gap:6px; }
+  .add-detail-row input{ margin-bottom:0; flex:1; }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--panel);
+    border:1px solid var(--accent);
+    color:var(--text);
+    padding:10px 18px;
+    border-radius:8px;
+    font-size:13px;
+    opacity:0;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+    z-index:100;
+    pointer-events:none;
+    max-width:90%;
+    text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .loading-state{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:13px;
+    padding:40px 0;
+  }
+
+  svg text{ font-family:var(--font-body); }
+
+  hr.divider{
+    border:none;
+    border-top:1px solid var(--panel-border);
+    margin:16px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div id="loadingState" class="loading-state">読み込み中...</div>
+
+  <div id="mainContent" style="display:none;">
+
+    <div class="exam-name" id="examNameDisplay">--</div>
+    <div class="countdown-block">
+      <div class="countdown-eyebrow">試験まで</div>
+      <div class="countdown-number" id="countdownNumber">--</div>
+      <div class="countdown-unit">日</div>
+      <div class="countdown-date" id="examDateDisplay"></div>
+    </div>
+
+    <div class="reminder-banner" id="reminderBanner">今日はまだ記録がありません。1分からでも記録しましょう。</div>
+
+    <div class="summary-row">
+      <div class="summary-box">
+        <div class="summary-value" id="summaryTotal">0</div>
+        <div class="summary-label">総学習時間(分)</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-value" id="summaryAvg">0</div>
+        <div class="summary-label">直近7日 平均/日(分)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">学習タイマー</h2>
+
+      <label for="categorySelect">区分</label>
+      <select id="categorySelect">
+        <option value="">選択してください</option>
+      </select>
+
+      <div id="detailWrap" style="display:none;">
+        <label for="detailSelect" id="detailLabel">詳細科目</label>
+        <select id="detailSelect"></select>
+      </div>
+
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+
+      <button class="btn btn-start" id="startBtn">学習開始</button>
+      <button class="btn btn-stop" id="stopBtn" style="display:none;">学習終了</button>
+
+      <div id="memoWrap" style="display:none; margin-top:10px;">
+        <label for="memoInput">メモ（任意）</label>
+        <input type="text" id="memoInput" placeholder="例：過去問演習">
+        <button class="btn btn-secondary" id="saveBtn">この記録を保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">直近7日間の学習履歴</h2>
+      <div id="historyList"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">日別学習時間</h2>
+      <div id="barChartWrap"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">科目バランス</h2>
+      <div id="pieChartWrap"></div>
+    </div>
+
+    <div class="settings-toggle" id="settingsToggle">表示設定・試験プロファイル</div>
+    <div class="settings-panel" id="settingsPanel">
+
+      <div class="card">
+        <h2 class="card-title">試験プロファイル</h2>
+        <div id="profileList"></div>
+        <button class="btn btn-secondary" id="newProfileBtn" style="margin-top:10px;">＋ 新しい試験プロファイルを作成</button>
+      </div>
+
+      <div class="card" id="profileEditCard" style="display:none;">
+        <h2 class="card-title" id="profileEditTitle">プロファイル編集</h2>
+
+        <label for="profExamName">試験名</label>
+        <input type="text" id="profExamName" placeholder="例：技術士一次試験">
+
+        <label for="profExamDate">試験日</label>
+        <input type="date" id="profExamDate">
+
+        <hr class="divider">
+
+        <label>科目構成</label>
+        <div id="categoryEditList"></div>
+        <button class="btn btn-secondary btn-small" id="addCategoryBtn" style="margin-top:6px;">＋ 区分を追加</button>
+
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-start" id="profSaveBtn">保存</button>
+          <button class="btn btn-secondary" id="profCancelBtn">キャンセル</button>
+        </div>
+        <button class="btn btn-secondary" id="profDeleteBtn" style="margin-top:8px; color:var(--warn); border-color:var(--warn);">このプロファイルを削除</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">データ管理</h2>
+        <button class="btn btn-secondary" id="resetBtn">このプロファイルの記録をすべて削除</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====================================================================
+// IndexedDB-backed storage, compatible with window.storage interface.
+// Claude.aiに依存せず、この端末のブラウザ内に直接データを保存する。
+// get(key, shared) / set(key, value, shared) / delete(key, shared) / list(prefix, shared)
+// ====================================================================
+(function(){
+  var DB_NAME = "study_tool_local_db";
+  var STORE_NAME = "kv_store";
+  var DB_VERSION = 1;
+  var dbPromise = null;
+
+  function openDb(){
+    if(dbPromise) return dbPromise;
+    dbPromise = new Promise(function(resolve, reject){
+      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if(!db.objectStoreNames.contains(STORE_NAME)){
+          db.createObjectStore(STORE_NAME, { keyPath: "key" });
+        }
+      };
+      req.onsuccess = function(e){ resolve(e.target.result); };
+      req.onerror = function(e){ reject(e.target.error); };
+    });
+    return dbPromise;
+  }
+
+  async function idbGet(key){
+    var db = await openDb();
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(STORE_NAME, "readonly");
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.get(key);
+      req.onsuccess = function(){ resolve(req.result); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+
+  async function idbSet(key, value){
+    var db = await openDb();
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(STORE_NAME, "readwrite");
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.put({ key: key, value: value });
+      req.onsuccess = function(){ resolve(true); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+
+  async function idbDelete(key){
+    var db = await openDb();
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(STORE_NAME, "readwrite");
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.delete(key);
+      req.onsuccess = function(){ resolve(true); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+
+  async function idbListKeys(prefix){
+    var db = await openDb();
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(STORE_NAME, "readonly");
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.getAllKeys();
+      req.onsuccess = function(){
+        var keys = req.result;
+        if(prefix){
+          keys = keys.filter(function(k){ return k.indexOf(prefix) === 0; });
+        }
+        resolve(keys);
+      };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+
+  // window.storage互換API。
+  // 元のAPI仕様: get/list は存在しないキーの場合に例外をthrow、または null を返す可能性があるため、
+  // ここでは「見つからない場合は例外をthrow」に統一し、既存コードのtry-catchと整合させる。
+  window.storage = {
+    get: async function(key, shared){
+      var row = await idbGet(key);
+      if(!row){
+        throw new Error("Key not found: " + key);
+      }
+      return { key: key, value: row.value, shared: !!shared };
+    },
+    set: async function(key, value, shared){
+      var ok = await idbSet(key, value);
+      if(!ok) return null;
+      return { key: key, value: value, shared: !!shared };
+    },
+    delete: async function(key, shared){
+      var ok = await idbDelete(key);
+      if(!ok) return null;
+      return { key: key, deleted: true, shared: !!shared };
+    },
+    list: async function(prefix, shared){
+      var keys = await idbListKeys(prefix);
+      return { keys: keys, prefix: prefix, shared: !!shared };
+    }
+  };
+})();
+
+(function(){
+
+  // ====================================================================
+  // Default profile (技術士一次試験) — used for first-run migration
+  // ====================================================================
+  var DEFAULT_PROFILE_ID = "profile_pe_default";
+
+  function buildDefaultProfile(){
+    return {
+      id: DEFAULT_PROFILE_ID,
+      examName: "技術士一次試験",
+      examDate: "2026-11-22",
+      categories: [
+        {
+          id: "cat_basic",
+          name: "基礎科目",
+          hasDetail: true,
+          details: [
+            {v:"group1", t:"1群：設計・計画に関するもの"},
+            {v:"group2", t:"2群：情報・論理に関するもの"},
+            {v:"group3", t:"3群：解析に関するもの"},
+            {v:"group4", t:"4群：材料・化学・バイオに関するもの"},
+            {v:"group5", t:"5群：環境・エネルギー・技術に関するもの"}
+          ]
+        },
+        {
+          id: "cat_aptitude",
+          name: "適性科目",
+          hasDetail: false,
+          details: []
+        },
+        {
+          id: "cat_specialty",
+          name: "専門科目（建設部門）",
+          hasDetail: true,
+          details: [
+            {v:"soil", t:"土質及び基礎"},
+            {v:"steel_concrete", t:"鋼構造及びコンクリート"},
+            {v:"urban", t:"都市及び地方計画"},
+            {v:"river", t:"河川、砂防及び海岸・海洋"},
+            {v:"port", t:"港湾及び空港"},
+            {v:"power_civil", t:"電力土木"},
+            {v:"road", t:"道路"},
+            {v:"railway", t:"鉄道"},
+            {v:"tunnel", t:"トンネル"},
+            {v:"construction_mgmt", t:"施工計画、施工設備及び積算"},
+            {v:"construction_env", t:"建設環境"}
+          ]
+        }
+      ]
+    };
+  }
+
+  var STORAGE_PROFILES_KEY = "exam_profiles_v2";
+  var STORAGE_ACTIVE_PROFILE_KEY = "active_profile_id_v2";
+  var STORAGE_RECORDS_PREFIX = "study_records_v2:"; // + profileId
+  var LEGACY_RECORDS_KEY = "study_records_v1"; // v1のデータ（マイグレーション対象）
+
+  var profiles = [];
+  var activeProfileId = null;
+  var records = []; // アクティブプロファイルの記録
+  var timerState = { running:false, startTime:null, category:"", detail:"", intervalId:null };
+  var editingProfileId = null; // 編集中（nullなら新規作成）
+  var editingCategories = []; // 編集フォーム内の一時データ
+
+  // ---------- Utility ----------
+  function pad(n){ return n<10 ? "0"+n : ""+n; }
+
+  function fmtElapsed(ms){
+    var totalSec = Math.floor(ms/1000);
+    var h = Math.floor(totalSec/3600);
+    var m = Math.floor((totalSec%3600)/60);
+    var s = totalSec%60;
+    return pad(h)+":"+pad(m)+":"+pad(s);
+  }
+
+  function todayStr(){
+    var d = new Date();
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+
+  function dateStrFromDate(d){
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+
+  function showToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 2200);
+  }
+
+  function uid(prefix){
+    return prefix + "_" + Date.now() + "_" + Math.floor(Math.random()*10000);
+  }
+
+  function getActiveProfile(){
+    for(var i=0;i<profiles.length;i++){
+      if(profiles[i].id === activeProfileId) return profiles[i];
+    }
+    return null;
+  }
+
+  function getCategoryById(profile, catId){
+    for(var i=0;i<profile.categories.length;i++){
+      if(profile.categories[i].id === catId) return profile.categories[i];
+    }
+    return null;
+  }
+
+  function detailLabel(profile, catId, detailValue){
+    var cat = getCategoryById(profile, catId);
+    if(!cat) return "";
+    for(var i=0;i<cat.details.length;i++){
+      if(cat.details[i].v === detailValue) return cat.details[i].t;
+    }
+    return "";
+  }
+
+  // ---------- Storage: profiles ----------
+  async function loadProfiles(){
+    try{
+      var res = await window.storage.get(STORAGE_PROFILES_KEY, false);
+      if(res && res.value){
+        profiles = JSON.parse(res.value);
+      } else {
+        profiles = [];
+      }
+    }catch(e){
+      profiles = [];
+    }
+
+    if(profiles.length === 0){
+      // 初回起動 or マイグレーション
+      var defaultProfile = buildDefaultProfile();
+      profiles = [defaultProfile];
+      await saveProfiles();
+
+      // v1データのマイグレーション
+      try{
+        var legacyRes = await window.storage.get(LEGACY_RECORDS_KEY, false);
+        if(legacyRes && legacyRes.value){
+          var legacyRecords = JSON.parse(legacyRes.value);
+          var migrated = legacyRecords.map(function(r){
+            var catId = r.category === "basic" ? "cat_basic" : (r.category === "aptitude" ? "cat_aptitude" : "cat_specialty");
+            return {
+              id: r.id,
+              date: r.date,
+              categoryId: catId,
+              detail: r.detail,
+              minutes: r.minutes,
+              memo: r.memo || ""
+            };
+          });
+          await window.storage.set(STORAGE_RECORDS_PREFIX + DEFAULT_PROFILE_ID, JSON.stringify(migrated), false);
+        }
+      }catch(e){
+        // 既存データなし。新規ユーザーとして続行。
+      }
+    }
+
+    try{
+      var activeRes = await window.storage.get(STORAGE_ACTIVE_PROFILE_KEY, false);
+      if(activeRes && activeRes.value){
+        activeProfileId = JSON.parse(activeRes.value);
+      }
+    }catch(e){
+      // 未設定
+    }
+
+    if(!activeProfileId || !getActiveProfileExists()){
+      activeProfileId = profiles[0].id;
+      await saveActiveProfileId();
+    }
+  }
+
+  function getActiveProfileExists(){
+    for(var i=0;i<profiles.length;i++){
+      if(profiles[i].id === activeProfileId) return true;
+    }
+    return false;
+  }
+
+  async function saveProfiles(){
+    try{
+      var res = await window.storage.set(STORAGE_PROFILES_KEY, JSON.stringify(profiles), false);
+      if(!res){ showToast("プロファイルの保存に失敗しました。"); }
+    }catch(e){
+      showToast("プロファイル保存エラーが発生しました。");
+    }
+  }
+
+  async function saveActiveProfileId(){
+    try{
+      var res = await window.storage.set(STORAGE_ACTIVE_PROFILE_KEY, JSON.stringify(activeProfileId), false);
+      if(!res){
+        console.warn("saveActiveProfileId: storage.set returned falsy", res);
+      }
+    }catch(e){
+      console.error("saveActiveProfileId error:", e);
+      showToast("プロファイル切り替えの保存に失敗しました。");
+    }
+  }
+
+  // ---------- Storage: records ----------
+  async function loadRecords(){
+    try{
+      var res = await window.storage.get(STORAGE_RECORDS_PREFIX + activeProfileId, false);
+      if(res && res.value){
+        records = JSON.parse(res.value);
+      } else {
+        records = [];
+      }
+    }catch(e){
+      records = [];
+    }
+  }
+
+  async function saveRecords(){
+    try{
+      var res = await window.storage.set(STORAGE_RECORDS_PREFIX + activeProfileId, JSON.stringify(records), false);
+      if(!res){ showToast("保存に失敗しました。もう一度お試しください。"); }
+    }catch(e){
+      showToast("保存エラーが発生しました。");
+    }
+  }
+
+  // ---------- Countdown ----------
+  function renderCountdown(){
+    var profile = getActiveProfile();
+    document.getElementById("examNameDisplay").textContent = profile.examName;
+
+    var examDate = new Date(profile.examDate + "T00:00:00");
+    var now = new Date();
+    var todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var diffMs = examDate - todayMidnight;
+    var diffDays = Math.ceil(diffMs / (1000*60*60*24));
+    document.getElementById("countdownNumber").textContent = diffDays >= 0 ? diffDays : 0;
+
+    var dateObj = new Date(profile.examDate + "T00:00:00");
+    document.getElementById("examDateDisplay").textContent =
+      dateObj.getFullYear()+"年"+(dateObj.getMonth()+1)+"月"+dateObj.getDate()+"日 実施予定";
+  }
+
+  function renderReminder(){
+    var today = todayStr();
+    var hasToday = records.some(function(r){ return r.date === today; });
+    var banner = document.getElementById("reminderBanner");
+    if(!hasToday){ banner.classList.add("show"); } else { banner.classList.remove("show"); }
+  }
+
+  // ---------- Category / detail select (timer) ----------
+  var categorySelect = document.getElementById("categorySelect");
+  var detailWrap = document.getElementById("detailWrap");
+  var detailSelect = document.getElementById("detailSelect");
+  var detailLabelEl = document.getElementById("detailLabel");
+
+  function populateCategorySelect(){
+    var profile = getActiveProfile();
+    categorySelect.innerHTML = '<option value="">選択してください</option>';
+    profile.categories.forEach(function(cat){
+      var opt = document.createElement("option");
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      categorySelect.appendChild(opt);
+    });
+    detailWrap.style.display = "none";
+  }
+
+  categorySelect.addEventListener("change", function(){
+    var profile = getActiveProfile();
+    var catId = categorySelect.value;
+    if(!catId){
+      detailWrap.style.display = "none";
+      return;
+    }
+    var cat = getCategoryById(profile, catId);
+    if(!cat.hasDetail || cat.details.length === 0){
+      detailWrap.style.display = "none";
+      return;
+    }
+    detailSelect.innerHTML = "";
+    cat.details.forEach(function(d){
+      var el = document.createElement("option");
+      el.value = d.v;
+      el.textContent = d.t;
+      detailSelect.appendChild(el);
+    });
+    detailLabelEl.textContent = "詳細科目";
+    detailWrap.style.display = "block";
+  });
+
+  // ---------- Timer ----------
+  var timerDisplay = document.getElementById("timerDisplay");
+  var startBtn = document.getElementById("startBtn");
+  var stopBtn = document.getElementById("stopBtn");
+  var memoWrap = document.getElementById("memoWrap");
+  var memoInput = document.getElementById("memoInput");
+  var saveBtn = document.getElementById("saveBtn");
+
+  startBtn.addEventListener("click", function(){
+    var profile = getActiveProfile();
+    var catId = categorySelect.value;
+    if(!catId){ showToast("区分を選択してください。"); return; }
+
+    var cat = getCategoryById(profile, catId);
+    var detail = "";
+    if(cat.hasDetail && cat.details.length > 0){
+      detail = detailSelect.value;
+      if(!detail){ showToast("詳細科目を選択してください。"); return; }
+    }
+
+    timerState.running = true;
+    timerState.startTime = Date.now();
+    timerState.category = catId;
+    timerState.detail = detail;
+
+    categorySelect.disabled = true;
+    detailSelect.disabled = true;
+    startBtn.style.display = "none";
+    stopBtn.style.display = "block";
+    timerDisplay.classList.add("running");
+
+    timerState.intervalId = setInterval(function(){
+      var elapsed = Date.now() - timerState.startTime;
+      timerDisplay.textContent = fmtElapsed(elapsed);
+    }, 1000);
+  });
+
+  stopBtn.addEventListener("click", function(){
+    clearInterval(timerState.intervalId);
+    timerState.running = false;
+    stopBtn.style.display = "none";
+    memoWrap.style.display = "block";
+  });
+
+  saveBtn.addEventListener("click", async function(){
+    var elapsedMs = Date.now() - timerState.startTime;
+    var minutes = Math.max(1, Math.round(elapsedMs/60000));
+
+    var record = {
+      id: uid("r"),
+      date: todayStr(),
+      categoryId: timerState.category,
+      detail: timerState.detail,
+      minutes: minutes,
+      memo: memoInput.value.trim()
+    };
+    records.push(record);
+    await saveRecords();
+
+    showToast("記録を保存しました（" + minutes + "分）");
+
+    categorySelect.disabled = false;
+    detailSelect.disabled = false;
+    categorySelect.value = "";
+    detailWrap.style.display = "none";
+    startBtn.style.display = "block";
+    timerDisplay.classList.remove("running");
+    timerDisplay.textContent = "00:00:00";
+    memoWrap.style.display = "none";
+    memoInput.value = "";
+
+    renderAll();
+  });
+
+  // ---------- History list (edit / delete) ----------
+  function getRecent7DaysRecords(){
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 6);
+    cutoff.setHours(0,0,0,0);
+    return records.filter(function(r){
+      var d = new Date(r.date + "T00:00:00");
+      return d >= cutoff;
+    }).sort(function(a,b){
+      return (b.date+b.id).localeCompare(a.date+a.id);
+    });
+  }
+
+  function renderHistory(){
+    var profile = getActiveProfile();
+    var list = document.getElementById("historyList");
+    var recent = getRecent7DaysRecords();
+
+    if(recent.length === 0){
+      list.innerHTML = '<div class="empty-state">直近7日間の記録はまだありません。</div>';
+      return;
+    }
+
+    list.innerHTML = "";
+    recent.forEach(function(r){
+      var cat = getCategoryById(profile, r.categoryId);
+      var catName = cat ? cat.name : "（削除された区分）";
+      var detailText = r.detail ? detailLabel(profile, r.categoryId, r.detail) : "";
+
+      var item = document.createElement("div");
+      item.className = "history-item";
+
+      var main = document.createElement("div");
+      main.className = "history-main";
+
+      var dateEl = document.createElement("div");
+      dateEl.className = "history-date";
+      dateEl.textContent = r.date;
+
+      var subjEl = document.createElement("div");
+      subjEl.className = "history-subject";
+      subjEl.textContent = catName + (detailText ? "（"+detailText+"）" : "");
+
+      main.appendChild(dateEl);
+      main.appendChild(subjEl);
+
+      if(r.memo){
+        var memoEl = document.createElement("div");
+        memoEl.className = "history-memo";
+        memoEl.textContent = r.memo;
+        main.appendChild(memoEl);
+      }
+
+      var actions = document.createElement("div");
+      actions.className = "history-actions";
+
+      var editBtn = document.createElement("button");
+      editBtn.className = "icon-btn";
+      editBtn.textContent = "編集";
+      editBtn.addEventListener("click", function(){ openEdit(r.id); });
+
+      var delBtn = document.createElement("button");
+      delBtn.className = "icon-btn danger";
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", function(){ deleteRecord(r.id); });
+
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      main.appendChild(actions);
+
+      var timeEl = document.createElement("div");
+      timeEl.className = "history-time";
+      timeEl.textContent = r.minutes + "分";
+
+      item.appendChild(main);
+      item.appendChild(timeEl);
+      list.appendChild(item);
+    });
+  }
+
+  async function deleteRecord(id){
+    if(!confirm("この記録を削除しますか？")) return;
+    records = records.filter(function(r){ return r.id !== id; });
+    await saveRecords();
+    renderAll();
+    showToast("記録を削除しました");
+  }
+
+  function openEdit(id){
+    var r = records.find(function(x){ return x.id === id; });
+    if(!r) return;
+    var newMinutes = prompt("学習時間（分）を編集", r.minutes);
+    if(newMinutes === null) return;
+    var n = parseInt(newMinutes, 10);
+    if(isNaN(n) || n <= 0){ showToast("正しい分数を入力してください。"); return; }
+    var newMemo = prompt("メモを編集（空欄可）", r.memo || "");
+    if(newMemo === null) newMemo = r.memo;
+
+    r.minutes = n;
+    r.memo = newMemo.trim();
+    saveRecords().then(function(){
+      renderAll();
+      showToast("記録を更新しました");
+    });
+  }
+
+  // ---------- Summary ----------
+  function renderSummary(){
+    var total = records.reduce(function(sum,r){ return sum + r.minutes; }, 0);
+    document.getElementById("summaryTotal").textContent = total;
+
+    var recent = getRecent7DaysRecords();
+    var recentTotal = recent.reduce(function(sum,r){ return sum + r.minutes; }, 0);
+    var avg = Math.round(recentTotal / 7);
+    document.getElementById("summaryAvg").textContent = avg;
+  }
+
+  // ---------- Bar chart: last 14 days ----------
+  function renderBarChart(){
+    var days = [];
+    var now = new Date();
+    for(var i=13;i>=0;i--){
+      var d = new Date(now);
+      d.setDate(d.getDate()-i);
+      days.push(dateStrFromDate(d));
+    }
+
+    var totals = days.map(function(dateStr){
+      return records.filter(function(r){ return r.date === dateStr; })
+                     .reduce(function(sum,r){ return sum + r.minutes; }, 0);
+    });
+
+    var maxVal = Math.max.apply(null, totals.concat([30]));
+
+    var w = 320, h = 140, padBottom = 22, padTop = 8;
+    var barAreaW = w - 10;
+    var barW = barAreaW / days.length;
+    var chartH = h - padBottom - padTop;
+
+    var svg = '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">';
+
+    totals.forEach(function(val, idx){
+      var barH = chartH * (val / maxVal);
+      var x = 5 + idx*barW;
+      var y = padTop + (chartH - barH);
+      var isToday = idx === days.length-1;
+      var color = isToday ? "var(--accent)" : (val>0 ? "var(--sub)" : "rgba(159,179,186,0.25)");
+      svg += '<rect x="'+(x+barW*0.15)+'" y="'+y+'" width="'+(barW*0.7)+'" height="'+Math.max(barH,2)+'" fill="'+color+'" rx="2"></rect>';
+
+      var dayNum = parseInt(days[idx].split("-")[2], 10);
+      svg += '<text x="'+(x+barW*0.5)+'" y="'+(h-6)+'" font-size="9" fill="var(--text-dim)" text-anchor="middle">'+dayNum+'</text>';
+    });
+
+    svg += '</svg>';
+    document.getElementById("barChartWrap").innerHTML = svg;
+  }
+
+  // ---------- Pie chart: category breakdown ----------
+  var PIE_COLORS = ["#e8a33d", "#5c8a89", "#7fa86b", "#d6634a", "#9fb3ba", "#c98bd6", "#4a90d9"];
+
+  function renderPieChart(){
+    var profile = getActiveProfile();
+    var byCategory = {};
+    profile.categories.forEach(function(c){ byCategory[c.id] = 0; });
+
+    records.forEach(function(r){
+      if(byCategory.hasOwnProperty(r.categoryId)){
+        byCategory[r.categoryId] += r.minutes;
+      }
+    });
+
+    var total = 0;
+    profile.categories.forEach(function(c){ total += byCategory[c.id]; });
+
+    var wrap = document.getElementById("pieChartWrap");
+
+    if(total === 0){
+      wrap.innerHTML = '<div class="empty-state">記録が増えるとここに円グラフが表示されます。</div>';
+      return;
+    }
+
+    var cx=70, cy=70, r=60;
+    var startAngle = -90;
+    var svg = '<svg viewBox="0 0 220 150" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">';
+
+    profile.categories.forEach(function(cat, idx){
+      var val = byCategory[cat.id];
+      if(val <= 0) return;
+      var angle = (val/total) * 360;
+      var endAngle = startAngle + angle;
+      var color = PIE_COLORS[idx % PIE_COLORS.length];
+
+      var x1 = cx + r*Math.cos(Math.PI*startAngle/180);
+      var y1 = cy + r*Math.sin(Math.PI*startAngle/180);
+      var x2 = cx + r*Math.cos(Math.PI*endAngle/180);
+      var y2 = cy + r*Math.sin(Math.PI*endAngle/180);
+      var largeArc = angle > 180 ? 1 : 0;
+
+      var path = 'M'+cx+','+cy+' L'+x1+','+y1+' A'+r+','+r+' 0 '+largeArc+' 1 '+x2+','+y2+' Z';
+      svg += '<path d="'+path+'" fill="'+color+'"></path>';
+
+      startAngle = endAngle;
+    });
+
+    svg += '</svg>';
+
+    var legend = '<div style="display:flex; flex-direction:column; gap:6px; margin-top:10px; font-size:12px;">';
+    profile.categories.forEach(function(cat, idx){
+      var val = byCategory[cat.id];
+      if(val <= 0) return;
+      var color = PIE_COLORS[idx % PIE_COLORS.length];
+      var pct = total > 0 ? Math.round((val/total)*100) : 0;
+      legend += '<div style="display:flex; align-items:center; gap:6px;">'+
+        '<span style="width:10px;height:10px;background:'+color+';display:inline-block;border-radius:2px;"></span>'+
+        '<span>'+cat.name+'：'+val+'分（'+pct+'%）</span>'+
+        '</div>';
+    });
+    legend += '</div>';
+
+    wrap.innerHTML = svg + legend;
+  }
+
+  // ---------- Settings toggle ----------
+  document.getElementById("settingsToggle").addEventListener("click", function(){
+    document.getElementById("settingsPanel").classList.toggle("show");
+  });
+
+  // ---------- Profile list rendering ----------
+  function renderProfileList(){
+    var list = document.getElementById("profileList");
+    list.innerHTML = "";
+    profiles.forEach(function(p){
+      var item = document.createElement("div");
+      item.className = "profile-item";
+
+      var nameEl = document.createElement("div");
+      nameEl.className = "profile-name" + (p.id === activeProfileId ? " active" : "");
+      nameEl.textContent = p.examName + (p.id === activeProfileId ? "（使用中）" : "");
+
+      var actions = document.createElement("div");
+      actions.className = "profile-actions";
+
+      if(p.id !== activeProfileId){
+        var useBtn = document.createElement("button");
+        useBtn.className = "icon-btn";
+        useBtn.textContent = "切替";
+        useBtn.addEventListener("click", function(){ switchProfile(p.id); });
+        actions.appendChild(useBtn);
+      }
+
+      var editBtn = document.createElement("button");
+      editBtn.className = "icon-btn";
+      editBtn.textContent = "編集";
+      editBtn.addEventListener("click", function(){ openProfileEdit(p.id); });
+      actions.appendChild(editBtn);
+
+      item.appendChild(nameEl);
+      item.appendChild(actions);
+      list.appendChild(item);
+    });
+  }
+
+  async function switchProfile(profileId){
+    activeProfileId = profileId;
+    await saveActiveProfileId();
+    await loadRecords();
+    populateCategorySelect();
+    renderAll();
+    renderProfileList();
+    showToast("プロファイルを切り替えました");
+  }
+
+  // ---------- Profile edit form ----------
+  var profileEditCard = document.getElementById("profileEditCard");
+  var profExamName = document.getElementById("profExamName");
+  var profExamDate = document.getElementById("profExamDate");
+  var categoryEditList = document.getElementById("categoryEditList");
+
+  function openProfileEdit(profileId){
+    editingProfileId = profileId;
+    var profile = null;
+    for(var i=0;i<profiles.length;i++){ if(profiles[i].id === profileId) profile = profiles[i]; }
+    if(!profile) return;
+
+    document.getElementById("profileEditTitle").textContent = "プロファイル編集";
+    profExamName.value = profile.examName;
+    profExamDate.value = profile.examDate;
+    editingCategories = JSON.parse(JSON.stringify(profile.categories));
+
+    renderCategoryEditList();
+    profileEditCard.style.display = "block";
+    profileEditCard.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  document.getElementById("newProfileBtn").addEventListener("click", function(){
+    editingProfileId = null;
+    document.getElementById("profileEditTitle").textContent = "新しい試験プロファイル";
+    profExamName.value = "";
+    profExamDate.value = "";
+    editingCategories = [
+      { id: uid("cat"), name: "", hasDetail:false, details:[] }
+    ];
+    renderCategoryEditList();
+    profileEditCard.style.display = "block";
+    profileEditCard.scrollIntoView({behavior:"smooth", block:"start"});
+  });
+
+  document.getElementById("addCategoryBtn").addEventListener("click", function(){
+    editingCategories.push({ id: uid("cat"), name:"", hasDetail:false, details:[] });
+    renderCategoryEditList();
+  });
+
+  function renderCategoryEditList(){
+    categoryEditList.innerHTML = "";
+
+    editingCategories.forEach(function(cat, catIdx){
+      var block = document.createElement("div");
+      block.className = "category-block";
+
+      var head = document.createElement("div");
+      head.className = "category-block-head";
+
+      var nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.placeholder = "区分名（例：基礎科目）";
+      nameInput.value = cat.name;
+      nameInput.addEventListener("input", function(){
+        editingCategories[catIdx].name = nameInput.value;
+      });
+
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "icon-btn danger";
+      removeBtn.textContent = "区分削除";
+      removeBtn.addEventListener("click", function(){
+        editingCategories.splice(catIdx, 1);
+        renderCategoryEditList();
+      });
+
+      head.appendChild(nameInput);
+      head.appendChild(removeBtn);
+      block.appendChild(head);
+
+      var toggleRow = document.createElement("div");
+      toggleRow.className = "toggle-row";
+      var checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = cat.hasDetail;
+      checkbox.id = "hasDetail_"+catIdx;
+      checkbox.addEventListener("change", function(){
+        editingCategories[catIdx].hasDetail = checkbox.checked;
+        renderCategoryEditList();
+      });
+      var checkboxLabel = document.createElement("label");
+      checkboxLabel.htmlFor = "hasDetail_"+catIdx;
+      checkboxLabel.style.margin = "0";
+      checkboxLabel.textContent = "詳細科目を設定する";
+      toggleRow.appendChild(checkbox);
+      toggleRow.appendChild(checkboxLabel);
+      block.appendChild(toggleRow);
+
+      if(cat.hasDetail){
+        var chipList = document.createElement("div");
+        chipList.className = "detail-chip-list";
+        cat.details.forEach(function(d, detailIdx){
+          var chip = document.createElement("div");
+          chip.className = "detail-chip";
+          var chipText = document.createElement("span");
+          chipText.textContent = d.t;
+          var chipRemove = document.createElement("button");
+          chipRemove.textContent = "×";
+          chipRemove.addEventListener("click", function(){
+            editingCategories[catIdx].details.splice(detailIdx, 1);
+            renderCategoryEditList();
+          });
+          chip.appendChild(chipText);
+          chip.appendChild(chipRemove);
+          chipList.appendChild(chip);
+        });
+        block.appendChild(chipList);
+
+        var addRow = document.createElement("div");
+        addRow.className = "add-detail-row";
+        var addInput = document.createElement("input");
+        addInput.type = "text";
+        addInput.placeholder = "詳細科目名を入力してEnter";
+        addRow.appendChild(addInput);
+
+        function addDetailFromInput(){
+          var val = addInput.value.trim();
+          if(!val) return;
+          editingCategories[catIdx].details.push({ v: uid("d"), t: val });
+          addInput.value = "";
+          renderCategoryEditList();
+        }
+
+        addInput.addEventListener("keydown", function(e){
+          if(e.key === "Enter"){ e.preventDefault(); addDetailFromInput(); }
+        });
+
+        var addBtn = document.createElement("button");
+        addBtn.className = "icon-btn";
+        addBtn.textContent = "追加";
+        addBtn.addEventListener("click", addDetailFromInput);
+        addRow.appendChild(addBtn);
+
+        block.appendChild(addRow);
+      }
+
+      categoryEditList.appendChild(block);
+    });
+  }
+
+  document.getElementById("profCancelBtn").addEventListener("click", function(){
+    profileEditCard.style.display = "none";
+    editingProfileId = null;
+  });
+
+  document.getElementById("profSaveBtn").addEventListener("click", async function(){
+    var examName = profExamName.value.trim();
+    var examDate = profExamDate.value;
+
+    if(!examName){ showToast("試験名を入力してください。"); return; }
+    if(!examDate){ showToast("試験日を選択してください。"); return; }
+    if(editingCategories.length === 0){ showToast("区分を1つ以上設定してください。"); return; }
+
+    var hasEmptyName = editingCategories.some(function(c){ return !c.name.trim(); });
+    if(hasEmptyName){ showToast("区分名が未入力の項目があります。"); return; }
+
+    var cleanedCategories = editingCategories.map(function(c){
+      return {
+        id: c.id,
+        name: c.name.trim(),
+        hasDetail: c.hasDetail && c.details.length > 0,
+        details: c.hasDetail ? c.details : []
+      };
+    });
+
+    if(editingProfileId){
+      // 既存編集
+      var profile = null;
+      for(var i=0;i<profiles.length;i++){ if(profiles[i].id === editingProfileId) profile = profiles[i]; }
+      profile.examName = examName;
+      profile.examDate = examDate;
+      profile.categories = cleanedCategories;
+    } else {
+      // 新規作成
+      var newProfile = {
+        id: uid("profile"),
+        examName: examName,
+        examDate: examDate,
+        categories: cleanedCategories
+      };
+      profiles.push(newProfile);
+      activeProfileId = newProfile.id;
+      await saveActiveProfileId();
+      await loadRecords();
+    }
+
+    await saveProfiles();
+    populateCategorySelect();
+    renderAll();
+    renderProfileList();
+    profileEditCard.style.display = "none";
+    showToast("プロファイルを保存しました");
+  });
+
+  document.getElementById("profDeleteBtn").addEventListener("click", async function(){
+    if(!editingProfileId){
+      showToast("新規作成中のプロファイルは削除できません。キャンセルしてください。");
+      return;
+    }
+    if(profiles.length <= 1){
+      showToast("最後のプロファイルは削除できません。");
+      return;
+    }
+    if(!confirm("このプロファイルと、紐づく学習記録を削除します。よろしいですか？")) return;
+
+    try{ await window.storage.delete(STORAGE_RECORDS_PREFIX + editingProfileId, false); }catch(e){}
+
+    profiles = profiles.filter(function(p){ return p.id !== editingProfileId; });
+    await saveProfiles();
+
+    if(activeProfileId === editingProfileId){
+      activeProfileId = profiles[0].id;
+      await saveActiveProfileId();
+      await loadRecords();
+      populateCategorySelect();
+    }
+
+    profileEditCard.style.display = "none";
+    editingProfileId = null;
+    renderAll();
+    renderProfileList();
+    showToast("プロファイルを削除しました");
+  });
+
+  // ---------- Reset records (active profile only) ----------
+  document.getElementById("resetBtn").addEventListener("click", async function(){
+    if(!confirm("このプロファイルの学習記録をすべて削除します。この操作は取り消せません。よろしいですか？")) return;
+    records = [];
+    await saveRecords();
+    renderAll();
+    showToast("このプロファイルの記録をすべて削除しました");
+  });
+
+  // ---------- Render all ----------
+  function renderAll(){
+    renderCountdown();
+    renderReminder();
+    renderHistory();
+    renderSummary();
+    renderBarChart();
+    renderPieChart();
+  }
+
+  // ---------- Init ----------
+  async function init(){
+    await loadProfiles();
+    await loadRecords();
+
+    populateCategorySelect();
+    renderProfileList();
+
+    document.getElementById("loadingState").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    renderAll();
+    setInterval(renderCountdown, 60*1000);
+  }
+
+  init();
+
+})();
+</script>
+
+</body>
+</html>
